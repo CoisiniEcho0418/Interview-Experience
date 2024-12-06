@@ -2,6 +2,8 @@
 
 ------
 
+## IOC
+
 ### Spring的IOC介绍一下
 
 **IOC**：Inversion Of Control，即控制反转，是一种设计思想。在传统的 Java SE 程序设计中，我们直接在对象内部通过 new 的方式来创建对象，是程序主动创建依赖对象；
@@ -24,6 +26,14 @@
 
 
 
+### IOC源码
+
+[Spring IOC 容器源码分析](https://javadoop.com/post/spring-ioc)
+
+
+
+## AOP
+
 ### Spring的aop介绍一下
 
 Spring AOP是Spring框架中的一个重要模块，用于实现面向切面编程。
@@ -40,6 +50,16 @@ Spring AOP是Spring框架中的一个重要模块，用于实现面向切面编�
 AOP能够将那些与业务无关，**却为业务模块所共同调用的逻辑或责任（例如事务处理、日志管理、权限控制等）封装起来**，便于**减少系统的重复代码**，**降低模块间的耦合度**，并**有利于未来的可拓展性和可维护性**。
 
 
+
+### Spring AOP的原理
+
+[SpringAOP原理分析-CSDN博客](https://blog.csdn.net/weixin_40160543/article/details/92010760?ops_request_misc=%7B%22request%5Fid%22%3A%224A74AD3D-EB64-4082-98D9-DF9F15CA231C%22%2C%22scm%22%3A%2220140713.130102334.pc%5Fall.%22%7D&request_id=4A74AD3D-EB64-4082-98D9-DF9F15CA231C&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~first_rank_ecpm_v1~rank_v31_ecpm-19-92010760-null-null.142^v100^pc_search_result_base2&utm_term=AOP原理&spm=1018.2226.3001.4187)
+
+[代理和AOP_运行时增强和编译时增强-CSDN博客](https://blog.csdn.net/weixin_41987908/article/details/135079686?ops_request_misc=&request_id=&biz_id=102&utm_term=编译时增强、运行时增强&utm_medium=distribute.pc_search_result.none-task-blog-2~all~sobaiduweb~default-0-135079686.142^v100^pc_search_result_base2&spm=1018.2226.3001.4187)
+
+
+
+## MVC
 
 ### Spring MVC的工作流程描述一下
 
@@ -58,3 +78,27 @@ Spring MVC的工作流程如下：
 9. ViewReslover解析后返回具体View
 10. DispatcherServlet对View进行渲染视图（即将模型数据model填充至视图中）。
 11. DispatcherServlet响应用户。
+
+
+
+## Bean
+
+### Spring bean是否是线程安全的？如何保证bean的线程安全性？
+
+[面试：Spring 中的bean 是线程安全的吗？-腾讯云开发者社区-腾讯云 (tencent.com)](https://cloud.tencent.com/developer/article/1743283)
+
+[Spring的bean是怎么保证线程安全的_springbean如何保证线程安全-CSDN博客](https://blog.csdn.net/mqq2502513332/article/details/124343634)
+
+
+
+## Spring事务
+
+[Spring 事务详解 | JavaGuide](https://javaguide.cn/system-design/framework/spring/spring-transaction.html)
+
+[太难了~面试官让我结合案例讲讲自己对Spring事务传播行为的理解。](https://mp.weixin.qq.com/s?__biz=Mzg2OTA0Njk0OA==&mid=2247486668&idx=2&sn=0381e8c836442f46bdc5367170234abb&chksm=cea24307f9d5ca11c96943b3ccfa1fc70dc97dd87d9c540388581f8fe6d805ff548dff5f6b5b&token=1776990505&lang=zh_CN#rd)
+
+
+
+## Spring设计模式
+
+[Spring 中的设计模式详解 | JavaGuide](https://javaguide.cn/system-design/framework/spring/spring-design-patterns-summary.html)

@@ -20,7 +20,7 @@
 
 可以看到， MySQL 的架构共分为两层：**Server 层和存储引擎层**，
 
-- **Server 层负责建立连接、分析和执行 SQL**。MySQL 大多数的核心功能模块都在这实现，主要包括连接器，查询缓存、解析器、预处理器、优化器、执行器等。另外，所有的内置函数（如日期、时间、数学和加密函数等）和所有跨存储引擎的功能（如存储过程、触发器、视图等。）都在 Server 层实现。
+- **Server 层负责建立连接、分析和执行 SQL**。MySQL 大多数的核心功能模块都在这实现，主要包括连接器，查询缓存、解析器、预处理器、优化器、执行器等。另外，所有的内置函数（如日期、时间、数学和加密函数等）和所有跨存储引擎的功能（如存储过程、触发器、视图等）都在 Server 层实现。
 - **存储引擎层负责数据的存储和提取**。支持 InnoDB、MyISAM、Memory 等多个存储引擎，不同的存储引擎共用一个 Server 层。现在最常用的存储引擎是 InnoDB，从 MySQL 5.5 版本开始， InnoDB 成为了 MySQL 的默认存储引擎。我们常说的索引数据结构，就是由存储引擎层实现的，不同的存储引擎支持的索引类型也不相同，比如 InnoDB 支持索引类型是 B+树 ，且是默认使用，也就是说在数据表中创建的主键索引和二级索引默认使用的是 B+ 树索引。
 
 ### [#](https://www.xiaolincoding.com/mysql/base/how_select.html#第一步-连接器)第一步：连接器
@@ -582,6 +582,18 @@ select * from order where status = 1 order by create_time asc
 #### 总结
 
 ![img](https://cdn.xiaolincoding.com/gh/xiaolincoder/mysql/%E7%B4%A2%E5%BC%95/%E7%B4%A2%E5%BC%95%E6%80%BB%E7%BB%93.drawio.png)
+
+
+
+## 主键使用自增ID还是UUID？
+
+推荐使用自增ID，不要使用UUID。
+
+因为在InnoDB存储引擎中，主键索引是作为聚簇索引存在的，也就是说， 主键索引的B+树叶子节点上存储了主键索引以及全部的数据(按照顺序)， 如果主键索引是自增ID，那么只需要不断向后排列即可，如果是UUID， 由于到来的ID与原来的大小不确定，会造成非常多的数据插入，数据移动，然后导致产生很多的内存碎片，进而造成插入性能的下降。
+
+总之，在数据量大一些的情况下，用自增主键性能会好一些。
+
+关于主键是聚簇索引，如果没有主键，InnoDB会选择一个唯一键来作为聚簇索引，如果没有唯一键，会生成一个隐式的主键。
 
 
 
@@ -1208,7 +1220,7 @@ redo log 是物理日志，记录了某个数据页做了什么修改，比如**
 
 ![事务恢复](https://cdn.xiaolincoding.com/gh/xiaolincoder/mysql/how_update/redologbuf.webp)
 
-redo log buffer 默认大小 16 MB，可以通过 `innodb_log_Buffer_size` 参数动态的调整大小，增大它的大小可以让 MySQL 处理「大事务」是不必写入磁盘，进而提升写 IO 性能。
+redo log buffer 默认大小 16 MB，可以通过 `innodb_log_Buffer_size` 参数动态的调整大小，增大它的大小可以让 MySQL 处理「大事务」时不必写入磁盘，进而提升写 IO 性能。
 
 
 
@@ -1755,7 +1767,7 @@ Next-Key Lock 称为临键锁，是 Record Lock + Gap Lock 的组合，锁定一
 > InnoDB 对 LRU 做了一些优化，我们熟悉的 LRU 算法通常是将最近查询的数据放到 LRU 链表的头部，而 InnoDB 做 2 点优化：
 >
 > - 将 LRU 链表 分为**young 和 old 两个区域**，加入缓冲池的页，优先插入 old 区域；页被访问时，才进入 young 区域，目的是为了解决预读失效的问题。
-> - 当**「页被访问」且「 old 区域停留时间超过 `innodb_old_blocks_time` 阈值（默认为1秒）」**时，才会将页插入到 young 区域，否则还是插入到 old 区域，目的是为了解决批量数据访问，大量热数据淘汰的问题。
+> - 当**「页被第二次访问」且「 old 区域停留时间超过 `innodb_old_blocks_time` 阈值（默认为1秒）」**时，才会将页插入到 young 区域，否则还是插入到 old 区域，目的是为了解决批量数据访问，大量热数据淘汰的问题。
 >
 > 可以通过调整 `innodb_old_blocks_pct` 参数，设置 young 区域和 old 区域比例。
 >
@@ -2038,12 +2050,170 @@ MySQL 的存储引擎常用的主要有 3 个：
 
 常用InnoDB的原因是支持事务，且最小锁的粒度是行级锁。
 
+![image-20240916221827888](assets\image-20240916221827888.png)
 
 
-### 你是怎么建立索引的？一般是建立哪些字段的索引呢？
+
+## 你是怎么建立索引的？一般是建立哪些字段的索引呢？
 
 索引最大的好处是提高查询速度，我经常针对下面场景来建立索引：
 
 - 字段有唯一性限制的，比如商品编码；
 - 经常用于 `WHERE` 查询条件的字段，这样能够提高整个表的查询速度，如果查询条件不是一个字段，可以建立联合索引。
 - 经常用于 `GROUP BY` 和 `ORDER BY` 的字段，这样在查询的时候就不需要再去做一次排序了，因为我们都已经知道了建立索引之后在 B+Tree 中的记录都是排序好的。
+
+
+
+## 给你张表，发现查询速度很慢，你有那些解决方案
+
+![image-20240915164809417](assets\image-20240915164809417.png)
+
+
+
+## 慢SQL分析与优化
+
+参考资料：
+
+[慢 SQL 分析与优化-CSDN博客](https://blog.csdn.net/ByteDanceTech/article/details/125795764)
+
+[MySQL慢SQL优化技术深度学习指南_mysql 慢sql优化-CSDN博客](https://blog.csdn.net/2301_78813969/article/details/138127467)
+
+
+
+## MySQL数据库cpu飙升到100%的话怎么处理？
+
+当 cpu 飙升到 100%时，先用操作系统命令 top 命令观察是不是 mysqld 占用导致的。
+
+如果不是，找出占用高的进程，并进行相关处理。
+
+如果是 mysqld 造成的， show processlist，看看里面跑的 session 情况，是不是有消耗资源的 sql 在运行。找出消耗高的 sql，看看执行计划是否准确，index 是否缺失，或者实在是数据量太大造成。
+
+一般来说，肯定要 kill 掉这些线程(同时观察 cpu 使用率是否下降)， 等进行相应的调整(比如说加索引、改 sql、改内存参数)之后，再重新跑这些 SQL。
+
+也有可能是每个 sql 消耗资源并不多，但是突然之间，有大量的 session 连进来导致 cpu 飙升， 这种情况就需要跟应用一起来分析为何连接数会激增， 再做出相应的调整，比如说限制连接数等。
+
+
+
+## 数据库范式
+
+> 三大范式 + 巴斯范式（BCNF）
+>
+> **第一范式**
+> 第一范式主要是确保数据表中每个字段的值必须具有原子性，最小数据单元。
+>
+> 
+>
+> **第二范式**
+> 第二范式要求，在满足第一范式的基础上，还要满足数据表里的每一条数据记录，都是可唯一标识的。而且所有非主键字段，都必须完全依赖主键，不能只依赖主键的一部分。
+>
+> 
+>
+> **第三范式**
+> 第三范式是在第二范式的基础上，确保数据表中的每一个非主键字段都和主键字段直接相关。
+> 也就是说，要求数据表中的所有非主键字段不能依赖于其他非主键字段(即，不能存在非主属性A 依赖于非主属性 B，非主属性B依赖于主键C的情况，即存在“A一B一C”的决定关系)。
+> 通俗地讲，该规则的意思是所有 非主键属性 之间不能有依赖关系，必须 相互独立。
+>
+> 
+>
+> **巴斯范式（BCNF）**
+>
+> - 简称**巴斯范式**，是改进的第三范式；
+> - 在第三范式基础上，要求：数据表**只能有一个候选键**或**每个候选键都是单属性**，进一步降低数据冗余性；
+
+**参考文章：**[**数据库的三大范式_三范式-CSDN博客**](https://blog.csdn.net/qq_52797170/article/details/125115139?ops_request_misc=%7B%22request%5Fid%22%3A%22D454307C-BEA5-4C9B-A982-F824105CAF71%22%2C%22scm%22%3A%2220140713.130102334..%22%7D&request_id=D454307C-BEA5-4C9B-A982-F824105CAF71&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~top_positive~default-1-125115139-null-null.142^v100^pc_search_result_base2&utm_term=数据库范式&spm=1018.2226.3001.4187)
+
+
+
+## 7种join
+
+> mysql种共有7种join，但实际上只有4种主要的:左外连接,右外连接,内连接,全外连接。以下7种不过在此基础上有一些变动:
+
+![在这里插入图片描述](https://i-blog.csdnimg.cn/blog_migrate/0bb748624b3e2e68ef6ffeacee526379.png#pic_center)
+
+**参考文章：**
+
+[MySQL 7种Join的定义&图解&示范&结果（所有join类型）_mysql join-CSDN博客](https://blog.csdn.net/HumorChen99/article/details/139996036)
+
+[mysql的7种join(图码并茂,清晰易懂!)_mysql join-CSDN博客](https://blog.csdn.net/weixin_46273997/article/details/112977917)
+
+
+
+## join 小表驱动大表原因剖析
+
+> **驱动表与被驱动表**
+>
+> 先了解在join连接时哪个表是驱动表，哪个表是被驱动表：
+> 1.当使用left join时，左表是驱动表，右表是被驱动表
+> 2.当使用right join时，右表是驱动表，左表是被驱动表
+> 3.当使用join时，mysql会选择数据量比较小的表作为驱动表，大表作为被驱动表
+>
+> 
+>
+> join查询在有索引条件下
+> 　　驱动表有索引不会使用到索引
+> 　　被驱动表建立索引会使用到索引
+>
+> 在以小表驱动大表的情况下，再给大表建立索引会大大提高执行速度
+>
+> 测试：给A表，B表建立索引
+> 分析：EXPLAIN select * from A a left join B b on a.code=b.code
+>
+> 只有B表(被驱动表)code使用到索引
+>
+> 如果只给A表的code建立索引会是什么情况？
+>
+> 在这种情况下，A表索引失效
+>
+> 
+>
+> **驱动表的含义**
+> MySQL 表关联的算法是 Nest Loop Join，是通过驱动表的结果集作为循环基础数据，然后一条一条地通过该结果集中的数据作为过滤条件到下一个表中查询数据
+> ，然后合并结果。如果还有第三个参与Join，则再通过前两个表的Join结果集作为循环基础数据，再一次通过循环查询条件到第三个表中查询数据，如此往复。
+>
+> （可以通过EXPLAIN分析来判断在sql中谁是驱动表，EXPLAIN语句分析出来的第一行的表即是驱动表）
+
+**结论**
+1.以小表驱动大表
+2.给被驱动表建立索引
+
+**参考文章：**
+
+[MySQL join大小表前后顺序影响分析_left join 大表放前面-CSDN博客](https://blog.csdn.net/CSDN_WYL2016/article/details/120292878)
+
+
+
+## [#](https://xiaolincoding.com/mysql/index/count.html#count-和-count-1-有什么区别-哪个性能最好)count(*) 和 count(1) 有什么区别？哪个性能最好？
+
+
+
+## **关系型数据库和非关系型数据库区别是什么？**
+
+SQL数据库，指关系型数据库 - 主要代表：SQL Server，Oracle，MySQL(开源)，PostgreSQL(开源)。
+
+关系型数据库存储结构化数据。这些数据逻辑上以行列二维表的形式存在，每一列代表数据的一种属性，每一行代表一个数据实体。
+
+<img src="https://mmbiz.qpic.cn/sz_mmbiz_png/J0g14CUwaZfugOSl9cfC49L4erpe6IPhanq3kkaseRDJe5sw4OZqAgiaG171wA53lIeYLRsnBPBRkkAFdAuDctA/640?wx_fmt=png&from=appmsg" alt="img" style="zoom:67%;" />
+
+NoSQL指非关系型数据库 ，主要代表：MongoDB，Redis。NoSQL 数据库逻辑上提供了不同于二维表的存储方式，存储方式可以是JSON文档、哈希表或者其他方式。
+
+<img src="https://mmbiz.qpic.cn/sz_mmbiz_png/J0g14CUwaZfugOSl9cfC49L4erpe6IPhjxQZOiacUwy4Pnf3UwCbZqibygNL5R96fWA0gNgJRop4cBKtVWkDcEUg/640?wx_fmt=png&from=appmsg" alt="img" style="zoom:67%;" />
+
+选择 SQL vs NoSQL，考虑以下因素。
+
+> ACID vs BASE
+
+关系型数据库支持 ACID 即原子性，一致性，隔离性和持续性。相对而言，NoSQL 采用更宽松的模型 BASE ， 即基本可用，软状态和最终一致性。
+
+从实用的角度出发，我们需要考虑对于面对的应用场景，ACID 是否是必须的。比如银行应用就必须保证 ACID，否则一笔钱可能被使用两次；又比如社交软件不必保证 ACID，因为一条状态的更新对于所有用户读取先后时间有数秒不同并不影响使用。
+
+对于需要保证 ACID 的应用，我们可以优先考虑 SQL。反之则可以优先考虑 NoSQL。
+
+> 扩展性对比
+
+NoSQL数据之间无关系，这样就非常容易扩展，也无形之间，在架构的层面上带来了可扩展的能力。比如 redis 自带主从复制模式、哨兵模式、切片集群模式。
+
+相反关系型数据库的数据之间存在关联性，水平扩展较难 ，需要解决跨服务器 JOIN，分布式事务等问题。
+
+
+
+## [MySQL夺命15问，你能坚持到第几问？](https://mp.weixin.qq.com/s/BXJybsrD5zy6oiZ31LtTpw)
