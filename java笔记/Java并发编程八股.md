@@ -849,6 +849,6 @@ protected final boolean compareAndSetState(int expect, int update) {
 
 ### 线程有哪些状态
 
-<img src="D:\Desktop\八股\java笔记\assets\image-20241015174703930.png" alt="image-20241015174703930" style="zoom: 80%;" />
+<img src="assets\image-20241015174703930.png" alt="image-20241015174703930" style="zoom: 80%;" />
 
 <img src="https://mmbiz.qpic.cn/mmbiz_png/z40lCFUAHpm9K41GFdu8ib6z2D61FgAtJTtRnRfUh4AoQB2diaYpicoyREVeJtYELJyCgu60xVXneRJqWb426ZRWw/640?wx_fmt=png&from=appmsg&tp=wxpic&wxfrom=5&wx_lazy=1&wx_co=1" alt="图片" style="zoom: 80%;" />
